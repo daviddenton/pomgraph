@@ -100,10 +100,10 @@ function parse(artifact, database) {
                                     Payload: payload
                                 }, function (err) {
                                     if (err) {
-                                        console.log('error sending' + payload, err);
+                                        console.log('error sending ' + payload + ' - ' + err);
                                         deferred.reject(err);
                                     } else {
-                                        console.log('queued' + payload);
+                                        console.log('queued ' + payload);
                                         deferred.resolve(dep);
                                     }
                                 });
