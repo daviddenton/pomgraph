@@ -1,7 +1,13 @@
 const q = require('q');
 const _ = require('lodash');
-var rq = q.denodeify(require('request'));
-var xml2json = q.denodeify(require('xml2js').parseString);
+const rq = q.denodeify(require('request'));
+const xml2json = q.denodeify(require('xml2js').parseString);
+const AWS = require("aws-sdk");
+
+AWS.config.update({
+    region: "us-west-2"
+});
+
 
 function Artifact(group, id, version) {
     return {
@@ -12,14 +18,6 @@ function Artifact(group, id, version) {
 }
 
 function Database() {
-    const AWS = require("aws-sdk");
-
-    AWS.config.update({
-        region: "us-west-2"
-    });
-
-    const docClient = new AWS.DynamoDB.DocumentClient();
-
     return {
         get: function (artifact) {
             console.log("looking for " + artifact.group + artifact.id + artifact.version);
@@ -71,8 +69,6 @@ function Database() {
         }
     };
 }
-
-// new Database().get(new Artifact('bob', 'bob', 'bob')).then(console.log);
 
 function parse(artifact, database) {
 
@@ -132,10 +128,10 @@ exports.handler = function (event, context) {
             context.succeed(e);
         });
 };
-
-// const database = new Database();
-var artifact = new Artifact('io.fintrospect', 'fintrospect-core_2.11', '13.8.1');
-
-// database.get(artifact).then(console.log);
-
-exports.handler(artifact);
+//
+// // const database = new Database();
+// var artifact = new Artifact('io.fintrospect', 'fintrospect-core_2.11', '13.8.1');
+//
+// // database.get(artifact).then(console.log);
+//
+// exports.handler(artifact);
