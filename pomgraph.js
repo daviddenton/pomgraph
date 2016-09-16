@@ -19,8 +19,6 @@ function Artifact(group, id, version) {
 function Database() {
     return {
         get: function (artifact) {
-            console.log("looking for " + artifact.group + artifact.id + artifact.version);
-
             var deferred = q.defer();
             new AWS.DynamoDB().getItem({
                 TableName: 'pomgraph',
@@ -59,7 +57,7 @@ function Database() {
                     console.log('error' + err);
                     deferred.reject(err);
                 } else {
-                    console.log('updated' + data);
+                    console.log('added to database' + artifact);
                     deferred.resolve(data);
                 }
             });
@@ -72,9 +70,8 @@ function Database() {
 function parse(artifact, database) {
 
     function getDependencies(json) {
-        console.log("getting dependencies");
         if (json.project.dependencies) {
-            var value = _.chain(json.project.dependencies[0].dependency)
+            return _.chain(json.project.dependencies[0].dependency)
                 .filter(function (dep) {
                     return dep.version && (dep.scope = 'provided' || !dep.scope);
                 })
@@ -82,8 +79,6 @@ function parse(artifact, database) {
                     return new Artifact(dependency.groupId[0], dependency.artifactId[0], dependency.version[0]);
                 })
                 .value();
-            console.log("got dependencies:" + value);
-            return value;
         } else {
             return [];
         }
@@ -144,5 +139,5 @@ exports.handler = function (event, context) {
             context.succeed(e);
         });
 };
-var artifact = new Artifact('io.fintrospect', 'fintrospect-core_2.11', '13.8.1');
-exports.handler(artifact);
+// var artifact = new Artifact('io.fintrospect', 'fintrospect-core_2.11', '13.8.1');
+// exports.handler(artifact);
