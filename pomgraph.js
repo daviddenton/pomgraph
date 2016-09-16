@@ -30,7 +30,7 @@ function Database() {
                 }
             }, function (err, data) {
                 if (err) {
-                    console.log('error for ' + key + ' - ' + err);
+                    console.log('error getting artifact ' + key + ' - ',  err);
                     deferred.reject(err);
                 } else {
                     console.log('read ' + key + ' ' + JSON.stringify(data.Item));
@@ -52,7 +52,7 @@ function Database() {
                 Item: copy
             }, function (err, data) {
                 if (err) {
-                    console.log('error' + err);
+                    console.log('error adding artifact ' + err);
                     deferred.reject(err);
                 } else {
                     console.log('added to database' + artifact);
@@ -100,7 +100,7 @@ function parse(artifact, database) {
                                     Payload: payload
                                 }, function (err) {
                                     if (err) {
-                                        console.log('error sending' + payload);
+                                        console.log('error sending' + payload, err);
                                         deferred.reject(err);
                                     } else {
                                         console.log('queued' + payload);
