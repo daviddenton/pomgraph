@@ -11,7 +11,7 @@
   },
   "scripts": {
     "update": "./cl update",
-    "create": "./cl create --region us-west-2 --role dba --timeout 10 --handler pomgraph.handler",
+    "create": "./cl create --region us-west-2 --role dba --timeout 60 --handler pomgraph.handler",
     "test": "./cl test-lambda --event test.json"
   },
   "devDependencies": {
