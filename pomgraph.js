@@ -8,7 +8,6 @@ AWS.config.update({
     region: "us-west-2"
 });
 
-
 function Artifact(group, id, version) {
     return {
         group: group,
@@ -42,7 +41,7 @@ function Database() {
             return deferred.promise;
         },
         add: function (artifact, dependencies) {
-            var deferred = q.defer();
+            const deferred = q.defer();
 
             const copy = _.clone(artifact);
             copy.ident = artifact.group + artifact.id + artifact.version;
@@ -88,9 +87,6 @@ function parse(artifact, database) {
         } else {
             return [];
         }
-        // return q.allSettled(_.map(deps, function (dep) {
-        //     return parse(dep.group, dep.artifact, dep.version);
-        // }));
     }
 
     function graphDependencies(artifact) {
@@ -101,7 +97,27 @@ function parse(artifact, database) {
                     return xml2json(data[1])
                         .then(getDependencies)
                         .then(function (deps) {
-                            return database.add(artifact, deps);
+                            return q.allSettled(_.map(deps, function (dep) {
+                                const deferred = q.defer();
+                                new AWS.Lambda().invoke({
+                                    FunctionName: 'pomgraph',
+                                    Payload: JSON.stringify(dep)
+                                }, function (err, data) {
+                                    if (err) {
+                                        console.log('error sending' + JSON.stringify(dep));
+                                        deferred.reject(err);
+                                    }
+                                    if (data.Payload) {
+                                        console.log('queued' + JSON.stringify(dep));
+                                        deferred.resolve(dep);
+                                    }
+                                });
+
+                                return deferred.promise;
+                            }))
+                                .then(function () {
+                                    return database.add(artifact, deps);
+                                });
                         });
                 }
             });
@@ -112,7 +128,7 @@ function parse(artifact, database) {
             if (!data) {
                 return graphDependencies(artifact);
             } else {
-                console.log("skipping as we already have this");
+                return "skipping as we already have this";
             }
         });
 }
@@ -128,10 +144,5 @@ exports.handler = function (event, context) {
             context.succeed(e);
         });
 };
-//
-// // const database = new Database();
-// var artifact = new Artifact('io.fintrospect', 'fintrospect-core_2.11', '13.8.1');
-//
-// // database.get(artifact).then(console.log);
-//
-// exports.handler(artifact);
+var artifact = new Artifact('io.fintrospect', 'fintrospect-core_2.11', '13.8.1');
+exports.handler(artifact);
