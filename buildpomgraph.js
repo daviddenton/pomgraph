@@ -18,18 +18,18 @@ function Database() {
         region: "us-west-2"
     });
 
-    const docClient = new AWS.DynamoDB();
+    const docClient = new AWS.DynamoDB.DocumentClient();
 
     return {
         get: function (artifact) {
             console.log("looking for " + artifact.group + artifact.id + artifact.version);
 
             var deferred = q.defer();
-            docClient.getItem({
+            new AWS.DynamoDB().getItem({
                 TableName: 'pomgraph',
                 Key: {
                     ident: {
-                        S: "looking for " + artifact.group + artifact.id + artifact.version
+                        S: artifact.group + artifact.id + artifact.version
                     }
                 }
             }, function (err, data) {
@@ -37,7 +37,7 @@ function Database() {
                     console.log('error' + err);
                     deferred.reject(err);
                 } else {
-                    console.log('read' + data.Item);
+                    console.log('read' + JSON.stringify(data.Item));
                     deferred.resolve(data.Item);
                 }
             });
@@ -46,12 +46,15 @@ function Database() {
         add: function (artifact, dependencies) {
             var deferred = q.defer();
 
-            console.log("adding " + artifact + dependencies);
             const copy = _.clone(artifact);
             copy.ident = artifact.group + artifact.id + artifact.version;
             copy.dependencies = dependencies;
+            console.log("adding " + JSON.stringify({
+                    TableName: 'pomgraph',
+                    Item: copy
+                }));
 
-            docClient.putItem({
+            new AWS.DynamoDB.DocumentClient().put({
                 TableName: 'pomgraph',
                 Item: copy
             }, function (err, data) {
@@ -59,7 +62,7 @@ function Database() {
                     console.log('error' + err);
                     deferred.reject(err);
                 } else {
-                    console.log('read' + data);
+                    console.log('updated' + data);
                     deferred.resolve(data);
                 }
             });
@@ -68,6 +71,8 @@ function Database() {
         }
     };
 }
+
+// new Database().get(new Artifact('bob', 'bob', 'bob')).then(console.log);
 
 function parse(artifact, database) {
 
@@ -95,6 +100,7 @@ function parse(artifact, database) {
     function graphDependencies(artifact) {
         return rq('https://repo1.maven.org/maven2/' + artifact.group.replace('.', '/') + '/' + artifact.id + '/' + artifact.version + '/' + artifact.id + '-' + artifact.version + '.pom')
             .then(function (data) {
+                console.log('from maven, got: ' + data[0].statusCode);
                 if (data[0].statusCode == 200) {
                     return xml2json(data[1])
                         .then(getDependencies)
@@ -109,6 +115,8 @@ function parse(artifact, database) {
         .then(function (data) {
             if (!data) {
                 return graphDependencies(artifact);
+            } else {
+                console.log("skipping as we already have this");
             }
         });
 }
@@ -124,3 +132,10 @@ exports.handler = function (event, context) {
             context.succeed(e);
         });
 };
+
+// const database = new Database();
+var artifact = new Artifact('io.fintrospect', 'fintrospect-core_2.11', '13.8.1');
+
+// database.get(artifact).then(console.log);
+
+exports.handler(artifact);

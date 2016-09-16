@@ -11,7 +11,7 @@
   },
   "scripts": {
     "update": "./cl update",
-    "create": "./cl create --region us-west-2 --handler buildpomgraph.handler",
+    "create": "./cl create --region us-west-2 --timeout 10 --handler buildpomgraph.handler",
     "test": "./cl test-lambda --event test.json"
   },
   "devDependencies": {
