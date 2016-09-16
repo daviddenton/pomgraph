@@ -1,16 +1,20 @@
 {
-  "name": "pomgraph",
+  "name": "buildpomgraph",
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "aws-sdk": "^2.5.5",
+    "aws-sdk": "^2.6.3",
     "lodash": "^4.15.0",
     "q": "^1.4.1",
     "request": "^2.74.0",
     "xml2js": "^0.4.17"
   },
   "scripts": {
-    "install": "./claudia create --region us-west-2 --handler pomgraph.handler",
-    "test": "./claudia test-lambda"
+    "update": "./cl update",
+    "create": "./cl create --region us-west-2 --handler buildpomgraph.handler",
+    "test": "./cl test-lambda --event test.json"
+  },
+  "devDependencies": {
+    "claudia": "^1.8.0"
   }
 }
