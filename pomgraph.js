@@ -20,19 +20,20 @@ function Database() {
     return {
         get: function (artifact) {
             var deferred = q.defer();
+            var key = artifact.group + artifact.id + artifact.version;
             new AWS.DynamoDB().getItem({
                 TableName: 'pomgraph',
                 Key: {
                     ident: {
-                        S: artifact.group + artifact.id + artifact.version
+                        S: key
                     }
                 }
             }, function (err, data) {
                 if (err) {
-                    console.log('error' + err);
+                    console.log('error for ' + key + ' - ' + err);
                     deferred.reject(err);
                 } else {
-                    console.log('read' + JSON.stringify(data.Item));
+                    console.log('read ' + key + ' ' + JSON.stringify(data.Item));
                     deferred.resolve(data.Item);
                 }
             });
@@ -44,10 +45,7 @@ function Database() {
             const copy = _.clone(artifact);
             copy.ident = artifact.group + artifact.id + artifact.version;
             copy.dependencies = dependencies;
-            console.log("adding " + JSON.stringify({
-                    TableName: 'pomgraph',
-                    Item: copy
-                }));
+            console.log("adding " + JSON.stringify(copy));
 
             new AWS.DynamoDB.DocumentClient().put({
                 TableName: 'pomgraph',
@@ -94,16 +92,18 @@ function parse(artifact, database) {
                         .then(function (deps) {
                             return q.allSettled(_.map(deps, function (dep) {
                                 const deferred = q.defer();
-                                new AWS.Lambda().invoke({
+                                const payload = JSON.stringify(dep);
+                                new AWS.Lambda({
+                                    region: "us-west-2"
+                                }).invoke({
                                     FunctionName: 'pomgraph',
-                                    Payload: JSON.stringify(dep)
-                                }, function (err, data) {
+                                    Payload: payload
+                                }, function (err) {
                                     if (err) {
-                                        console.log('error sending' + JSON.stringify(dep));
+                                        console.log('error sending' + payload);
                                         deferred.reject(err);
-                                    }
-                                    if (data.Payload) {
-                                        console.log('queued' + JSON.stringify(dep));
+                                    } else {
+                                        console.log('queued' + payload);
                                         deferred.resolve(dep);
                                     }
                                 });
@@ -139,5 +139,5 @@ exports.handler = function (event, context) {
             context.succeed(e);
         });
 };
-// var artifact = new Artifact('io.fintrospect', 'fintrospect-core_2.11', '13.8.1');
-// exports.handler(artifact);
+var artifact = new Artifact('io.fintrospect', 'fintrospect-core_2.11', '13.8.1');
+exports.handler(artifact);
