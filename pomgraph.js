@@ -139,5 +139,3 @@ exports.handler = function (event, context) {
             context.succeed(e);
         });
 };
-var artifact = new Artifact('io.fintrospect', 'fintrospect-core_2.11', '13.8.1');
-exports.handler(artifact);
