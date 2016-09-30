@@ -114,7 +114,7 @@ function parse(artifact, database) {
 exports.handler = function (event, context) {
     const database = new Database();
 
-    parse(event, database)
+    parse(JSON.parse(event.Records[0].Sns.Message), database)
         .then(function (result) {
             context.succeed(result);
         })
@@ -123,9 +123,3 @@ exports.handler = function (event, context) {
             context.succeed(e);
         });
 };
-
-exports.handler({
-    "group": "io.fintrospect",
-    "id": "fintrospect-core_2.11",
-    "version": "13.8.1"
-});
