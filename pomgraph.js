@@ -4,6 +4,7 @@ const rq = q.denodeify(require('request'));
 const xml2json = q.denodeify(require('xml2js').parseString);
 const AWS = require("aws-sdk");
 
+AWS.config.setPromisesDependency(q);
 AWS.config.update({
     region: "us-west-2"
 });
@@ -19,48 +20,37 @@ function Artifact(group, id, version) {
 function Database() {
     return {
         get: function (artifact) {
-            var deferred = q.defer();
             var key = artifact.group + artifact.id + artifact.version;
-            new AWS.DynamoDB().getItem({
+            return new AWS.DynamoDB().getItem({
                 TableName: 'pomgraph',
                 Key: {
                     ident: {
                         S: key
                     }
                 }
-            }, function (err, data) {
-                if (err) {
-                    console.log('error getting artifact ' + key + ' - ' + err);
-                    deferred.reject(err);
-                } else {
-                    console.log('read ' + key + ' ' + JSON.stringify(data.Item));
-                    deferred.resolve(data.Item);
-                }
+            }).promise().then(function (data) {
+                console.log('read ' + key + ' ' + JSON.stringify(data.Item));
+                return data.Item;
             });
-            return deferred.promise;
         },
         add: function (artifact, dependencies) {
-            const deferred = q.defer();
-
             const copy = _.clone(artifact);
             copy.ident = artifact.group + artifact.id + artifact.version;
             copy.dependencies = dependencies;
             console.log("adding " + JSON.stringify(copy));
 
-            new AWS.DynamoDB.DocumentClient().put({
+            return new AWS.DynamoDB.DocumentClient().put({
                 TableName: 'pomgraph',
                 Item: copy
-            }, function (err, data) {
-                if (err) {
-                    console.log('error adding artifact ' + copy.ident + ' - ' + err);
-                    deferred.reject(err);
-                } else {
+            }).promise()
+                .then(function (data) {
                     console.log('added to database' + artifact);
-                    deferred.resolve(data);
-                }
-            });
-
-            return deferred.promise;
+                    return data;
+                })
+                .catch(function (err) {
+                    console.log('error adding artifact ' + copy.ident + ' - ' + err);
+                    throw err
+                });
         }
     };
 }
@@ -91,24 +81,17 @@ function parse(artifact, database) {
                         .then(getDependencies)
                         .then(function (deps) {
                             return q.allSettled(_.map(deps, function (dep) {
-                                const deferred = q.defer();
                                 const payload = JSON.stringify(dep);
-                                new AWS.Lambda({
+                                return new AWS.Lambda({
                                     region: "us-west-2"
                                 }).invoke({
                                     FunctionName: 'pomgraph',
                                     Payload: payload
-                                }, function (err) {
-                                    if (err) {
-                                        console.log('error sending ' + payload + ' - ' + err);
-                                        deferred.reject(err);
-                                    } else {
+                                }).promise()
+                                    .then(function (data) {
                                         console.log('queued ' + payload);
-                                        deferred.resolve(dep);
-                                    }
-                                });
-
-                                return deferred.promise;
+                                        return data;
+                                    });
                             }))
                                 .then(function () {
                                     return database.add(artifact, deps);
@@ -136,6 +119,13 @@ exports.handler = function (event, context) {
             context.succeed(result);
         })
         .catch(function (e) {
+            console.log(e);
             context.succeed(e);
         });
 };
+
+exports.handler({
+    "group": "io.fintrospect",
+    "id": "fintrospect-core_2.11",
+    "version": "13.8.1"
+});
