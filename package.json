@@ -15,6 +15,7 @@
     "test": "./cl test-lambda --event test.json"
   },
   "devDependencies": {
-    "claudia": "^2.0.2"
+    "claudia": "^2.0.2",
+    "external-ip": "^0.2.4"
   }
 }
