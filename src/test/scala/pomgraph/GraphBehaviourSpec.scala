@@ -18,6 +18,7 @@ trait GraphBehaviourSpec extends FunSpec with Matchers with BeforeAndAfterAll {
     graph.add(C.v2, Set(A.v2, B.v1))
     graph.add(C.v3, Set(A.v3, B.v2))
     graph.add(D.v1, Set(C.v3, A.v1))
+    graph.add(E.v1, Set(B.v2))
   }
 
   describe(graph.getClass.getSimpleName) {
@@ -45,6 +46,19 @@ trait GraphBehaviourSpec extends FunSpec with Matchers with BeforeAndAfterAll {
 
       it("returns nothing if package unknown") {
         result(graph.dependentsOf(Package("com", "a"))) shouldBe None
+      }
+    }
+
+    describe("weight") {
+      it("returns weight for a known package") {
+        result(graph.weight(A.v1)) shouldBe Option(0)
+        result(graph.weight(B.v1)) shouldBe Option(1)
+        result(graph.weight(D.v1)) shouldBe Option(3)
+        result(graph.weight(E.v1)) shouldBe Option(2)
+      }
+
+      it("returns nothing if package unknown") {
+        result(graph.weight(VersionedPackage(C.pkg, "4"))) shouldBe None
       }
     }
   }

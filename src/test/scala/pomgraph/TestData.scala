@@ -19,7 +19,6 @@ object TestData {
     val pkg = Package("io", "b")
     val v1 = VersionedPackage(B.pkg, Version.one)
     val v2 = VersionedPackage(B.pkg, Version.two)
-    val v3 = VersionedPackage(B.pkg, Version.three)
   }
 
   object C {
@@ -29,12 +28,14 @@ object TestData {
     val v3 = VersionedPackage(C.pkg, Version.three)
   }
 
-
   object D {
     val pkg = Package("io", "d")
     val v1 = VersionedPackage(D.pkg, Version.one)
-    val v2 = VersionedPackage(D.pkg, Version.two)
-    val v3 = VersionedPackage(D.pkg, Version.three)
+  }
+
+  object E {
+    val pkg = Package("com", "e")
+    val v1 = VersionedPackage(E.pkg, Version.one)
   }
 
 }
