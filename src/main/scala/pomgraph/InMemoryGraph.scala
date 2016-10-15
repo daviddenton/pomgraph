@@ -25,8 +25,7 @@ class InMemoryGraph extends DependencyGraph {
   override def dependentsOf(pkg: Package): Future[Option[Set[Package]]] = {
     Future.value(graphs.get(pkg).map(
       _ => graphs.foldLeft(Set.empty[Package]) {
-        (memo, next) =>
-          if (next._2.exists(_._2.exists(_.pkg == pkg))) memo + next._1 else memo
+        (memo, next) => if (next._2.exists(_._2.exists(_.pkg == pkg))) memo + next._1 else memo
       }
     ))
   }
