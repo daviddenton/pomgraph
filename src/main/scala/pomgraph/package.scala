@@ -1,13 +1,16 @@
-
+import io.fintrospect.formats.Json4s
 
 package object pomgraph {
-  type Group = String
-  type ModuleId = String
-  type Version = String
-  type Dependencies = Set[VersionedModule]
+  val JsonLib = Json4s
 
-  case class VersionedModule(group: Group, id: ModuleId, version: Version)
+  type Group = String
+  type PackageId = String
+  type Version = String
+
+  case class Package(group: Group, id: PackageId)
+
+  case class VersionGraph(version: VersionedPackage, dependencies: Set[VersionGraph] = Set())
+
+  case class VersionedPackage(pkg: Package, version: Version)
 
 }
-
-

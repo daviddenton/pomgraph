@@ -6,8 +6,7 @@ import com.twitter.util.Await
 object Pomgraph {
   def main(args: Array[String]) {
     val config = Settings.config.reify()
-    Await.ready(Http.serve(s":${config.valueOf(Settings.PORT).value}", new PomgraphApp(
-      new Database, config
-    ).service))
+    val graph = new InMemoryGraph
+    Await.ready(Http.serve(s":${config.valueOf(Settings.PORT).value}", new PomgraphApp(graph, config).service))
   }
 }

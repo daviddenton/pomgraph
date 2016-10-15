@@ -1,7 +1,7 @@
 const AWS = require('./aws');
 
 new AWS.cf.deleteStack('pomgraph').then(function (data) {
-    console.log('ok??:' + JSON.stringify(data));
+    console.log('delete stack request accepted:' + JSON.stringify(data));
 });
 
 

@@ -7,30 +7,33 @@ import com.twitter.finagle.http.filter.Cors.{HttpFilter, UnsafePermissivePolicy}
 import com.twitter.finagle.http.path.Root
 import com.twitter.finagle.http.{Request, Response}
 import com.twitter.util.Future
-import io.fintrospect.formats.Json4s
-import io.fintrospect.formats.Json4s.JsonFormat._
-import io.fintrospect.formats.Json4s.ResponseBuilder.implicits._
 import io.fintrospect.parameters.{Header, ParameterSpec, Path}
 import io.fintrospect.{ApiKey, ModuleSpec, RouteSpec}
 import io.github.configur8.Configuration
+import pomgraph.JsonLib.JsonFormat._
+import pomgraph.JsonLib.ResponseBuilder.implicits._
 
-class PomgraphApp(database: Database, config: Configuration) {
+class PomgraphApp(graph: DependencyGraph, config: Configuration) {
+
+  private val group = Path(ParameterSpec.string("group"))
+  private val id = Path(ParameterSpec.string("id"))
+  private val version = Path(ParameterSpec.string("version"))
+  private val dependencies = body[Set[VersionedPackage]]()
+
   private def add(group: String, name: String, version: String) = Service.mk[Request, Response] {
     rq: Request =>
-      database.add(VersionedModule(group, name, version), dependencies <-- rq)
+      graph.add(VersionedPackage(Package(group, name), version), dependencies <-- rq)
         .map(_ => Created())
   }
 
   private def lookup(group: String, name: String, version: String) = Service.mk[Request, Response] {
     rq: Request =>
-      database.lookup(VersionedModule(group, name, version))
-        .flatMap(o => o.map(m => Ok(encode(m))).getOrElse(NotFound()).toFuture)
+      graph.lookup(VersionedPackage(Package(group, name), version))
+        .map(o => {
+          val response = o.map(m => Ok(encode(m))).getOrElse(NotFound())
+          response
+        })
   }
-
-  private val group = Path(ParameterSpec.string("group"))
-  private val id = Path(ParameterSpec.string("id"))
-  private val version = Path(ParameterSpec.string("version"))
-  private val dependencies = Json4s.JsonFormat.body[Dependencies]()
 
   private val module = ModuleSpec(Root / "pomgraph")
     .securedBy(ApiKey[String, Request](Header.required.string("apiKey"), key => Future.value(key == config.valueOf(Settings.API_KEY))))
