@@ -31,20 +31,11 @@ class InMemoryGraph extends DependencyGraph {
   }
 
   override def weight(versionedPackage: VersionedPackage): Future[Option[Int]] = {
-    def weigh(acc: Int, graph: VersionGraph, seen: Set[Package]): Int =
+    def weigh(acc: Set[VersionedPackage], graph: VersionGraph): Set[VersionedPackage] =
       if (graph.dependencies.isEmpty) acc
-      else {
-        val result = acc + graph.dependencies
-          .filter(g => !seen.contains(g.version.pkg))
-          .foldLeft(0) {
-            (acc, g) => acc + weigh(1, g, seen + g.version.pkg)
-          }
+      else graph.dependencies.foldLeft(acc)((memo, g) => memo ++ weigh(Set(g.version), g))
 
-        println(versionedPackage + " = " + result)
-        result
-      }
-
-    Future.value(internalLookup(versionedPackage).map(g => weigh(0, g, Set.empty)))
+    Future.value(internalLookup(versionedPackage).map(g => weigh(Set.empty[VersionedPackage], g).map(_.pkg).size))
   }
 }
 
