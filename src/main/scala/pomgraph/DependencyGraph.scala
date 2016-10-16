@@ -10,4 +10,7 @@ trait DependencyGraph {
   def lookup(versionedPackage: VersionedPackage): Future[Option[VersionGraph]]
 
   def add(versionedPackage: VersionedPackage, dependencies: Set[VersionedPackage]): Future[Unit]
+
+  def groupWeights(group: Group): Future[Option[Seq[(VersionedPackage, Int)]]]
+
 }

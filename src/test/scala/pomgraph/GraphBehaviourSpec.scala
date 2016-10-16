@@ -61,5 +61,17 @@ trait GraphBehaviourSpec extends FunSpec with Matchers with BeforeAndAfterAll {
         result(graph.weight(VersionedPackage(C.pkg, "4"))) shouldBe None
       }
     }
+
+    describe("group weights") {
+      it("returns weight for a known package") {
+        result(graph.groupWeights("com")) shouldBe Option(
+          List(E.v1 -> 2, C.v3 -> 2)
+        )
+      }
+
+      it("returns nothing if group unknown") {
+        result(graph.groupWeights("bob")) shouldBe None
+      }
+    }
   }
 }

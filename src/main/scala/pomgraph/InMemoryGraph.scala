@@ -38,6 +38,20 @@ class InMemoryGraph extends DependencyGraph {
     internalLookup(versionedPackage).map(g => listDeps(Set.empty[VersionedPackage], g))
   }
 
-  override def weight(versionedPackage: VersionedPackage): Future[Option[Int]] = Future.value(listDepsOf(versionedPackage).map(set => set.map(_.pkg).size))
+  private def internalWeight(versionedPackage: VersionedPackage): Option[Int] = listDepsOf(versionedPackage).map(set => set.map(_.pkg).size)
+
+  override def weight(versionedPackage: VersionedPackage): Future[Option[Int]] = Future.value(internalWeight(versionedPackage))
+
+  override def groupWeights(group: Group): Future[Option[Seq[(VersionedPackage, Int)]]] =
+    Future.value(graphs.groupBy(_._1.group).get(group)
+      .map {
+        group => group.keys.toSeq.map {
+          pkg => {
+            val latestVersion = VersionedPackage(pkg, group(pkg).keys.toSeq.sortBy(v => v).last)
+            (latestVersion, internalWeight(latestVersion).get)
+          }
+        }
+      }
+    )
 }
 
